@@ -1,22 +1,23 @@
 # TaskFlow
 
-Gestor de proyectos ágiles con seguimiento de issues.
+Gestor de proyectos con trabajos, comentarios y adjuntos.
 
-## Tecnologías
-- Node.js + Express
-- PostgreSQL (pgAdmin)
-- Git + GitHub
+## Requisitos
 
-## Cómo levantar el proyecto
+- Node.js
+- PostgreSQL con las tablas existentes `users`, `projects`, `issues` y `comments`
 
-### 1. Base de datos
-- Crear base de datos `taskflow` en pgAdmin
-- Las tablas ya deben existir (users, projects, project_members, issues, comments)
+## Configuración y ejecución
 
-### 2. Backend
-```bash
-cd backend
-cp .env.example .env
-# Editar .env con tus credenciales de PostgreSQL
-npm install
-npm run dev
+1. En `backend`, copia `.env.example` a `.env`, configura la conexión a PostgreSQL y establece `JWT_SECRET` con una cadena aleatoria de 32 caracteres o más.
+2. Desde la carpeta `backend`, ejecuta `npm install` y luego `npm run db:migrate`. La migración reutiliza `comments`, conserva `users.password_hash` si ya existe y crea las tablas auxiliares para valoraciones y archivos.
+3. Inicia la API con `npm run dev` desde `backend`.
+4. En otra terminal, ejecuta `npm install` y `npm run dev` desde `frontend`. Vite mostrará la dirección local.
+
+El registro crea cuentas con rol `user`. Para habilitar una cuenta administradora, registra primero el correo y cambia su rol manualmente desde pgAdmin:
+
+```sql
+UPDATE users SET role = 'admin' WHERE lower(email) = lower('admin@tu-dominio.com');
+```
+
+Luego cierra sesión e inicia sesión de nuevo para recibir un token con el rol actualizado. La API guarda contraseñas nuevas con `scrypt` y los tokens duran 12 horas. Los comentarios, valoraciones, cargas de documentos y operaciones de administración requieren sesión y el servidor valida el rol.
