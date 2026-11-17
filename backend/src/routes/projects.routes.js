@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticate, requireRole } = require('../middleware/auth');
 const {
   getAllProjects,
   getProjectById,
@@ -10,8 +11,8 @@ const {
 
 router.get('/', getAllProjects);
 router.get('/:id', getProjectById);
-router.post('/', createProject);
-router.put('/:id', updateProject);
-router.delete('/:id', deleteProject);
+router.post('/', authenticate, requireRole('admin'), createProject);
+router.put('/:id', authenticate, requireRole('admin'), updateProject);
+router.delete('/:id', authenticate, requireRole('admin'), deleteProject);
 
 module.exports = router;

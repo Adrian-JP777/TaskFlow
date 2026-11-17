@@ -1,6 +1,5 @@
 const pool = require('../config/db');
 
-// Obtener todos los issues de un proyecto
 const getIssuesByProject = async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -22,11 +21,37 @@ const getIssuesByProject = async (req, res) => {
   }
 };
 
+// Obtener un solo issue por ID
+const getIssueById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `SELECT i.*, 
+              u1.name as assignee_name, 
+              u2.name as reporter_name
+       FROM issues i
+       LEFT JOIN users u1 ON i.assignee_id = u1.id
+       LEFT JOIN users u2 ON i.reporter_id = u2.id
+       WHERE i.id = $1`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Issue no encontrado' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener el issue' });
+  }
+};
+
 // Crear issue
 const createIssue = async (req, res) => {
   try {
     const { projectId } = req.params;
-    const { title, description, status, priority, assignee_id, reporter_id } = req.body;
+    const { title, description, status, priority, assignee_id } = req.body;
 
     if (!title) {
       return res.status(400).json({ error: 'El título es obligatorio' });
@@ -43,7 +68,7 @@ const createIssue = async (req, res) => {
         status || 'todo',
         priority || 'medium',
         assignee_id || null,
-        reporter_id || null,
+        req.user.id,
       ]
     );
 
@@ -106,6 +131,7 @@ const deleteIssue = async (req, res) => {
 
 module.exports = {
   getIssuesByProject,
+  getIssueById,
   createIssue,
   updateIssue,
   deleteIssue,

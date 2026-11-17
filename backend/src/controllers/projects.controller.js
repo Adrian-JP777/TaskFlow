@@ -36,7 +36,7 @@ const getProjectById = async (req, res) => {
 // Crear proyecto
 const createProject = async (req, res) => {
   try {
-    const { name, description, owner_id, status } = req.body;
+    const { name, description, status } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: "El nombre es obligatorio" });
@@ -46,7 +46,7 @@ const createProject = async (req, res) => {
       `INSERT INTO projects (name, description, owner_id, status)
        VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [name, description || null, owner_id || null, status || "active"],
+      [name, description || null, req.user.id, status || "active"],
     );
 
     res.status(201).json(result.rows[0]);
