@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 function ProjectsPage() {
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -32,16 +34,12 @@ function ProjectsPage() {
   const handleCreateProject = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-
     try {
       setCreating(true);
-      await api.post('/projects', {
-        name,
-        description,
-        status: 'active',
-      });
+      await api.post('/projects', { name, description, status: 'active' });
       setName('');
       setDescription('');
+      setShowForm(false);
       await fetchProjects();
     } catch (err) {
       alert('Error al crear el proyecto');
@@ -53,110 +51,117 @@ function ProjectsPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-20">
-        <div className="animate-pulse text-slate-500">Cargando proyectos...</div>
+      <div className="flex flex-col items-center justify-center py-24">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-orange-200 border-t-red-600" />
+        <p className="mt-4 text-sm text-slate-500">Cargando proyectos…</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-        {error}
-      </div>
+      <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">{error}</div>
     );
   }
 
   return (
-    <div>
-      {/* Título */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">Proyectos</h1>
-        <p className="text-slate-500 mt-1">Gestiona tus proyectos de software</p>
-      </div>
-
-      {/* Formulario de creación */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 mb-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4">Nuevo proyecto</h2>
-        <form onSubmit={handleCreateProject} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Nombre del proyecto
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Sistema de ventas"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Descripción
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe brevemente el proyecto..."
-              rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            />
-          </div>
+    <div className="animate-fade-in">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-800">Proyectos</h1>
+          <p className="mt-1 text-slate-500">Gestiona tus proyectos de software</p>
+        </div>
+        {user?.role === 'admin' && (
           <button
-            type="submit"
-            disabled={creating}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium px-5 py-2.5 rounded-lg transition-colors"
+            onClick={() => setShowForm(!showForm)}
+            className="rounded-xl bg-gradient-to-r from-red-600 to-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-200 transition hover:from-red-700 hover:to-orange-600"
           >
-            {creating ? 'Creando...' : 'Crear proyecto'}
+            {showForm ? 'Cancelar' : '+ Nuevo proyecto'}
           </button>
-        </form>
+        )}
       </div>
 
-      {/* Lista de proyectos */}
-      <div className="mb-4 flex items-center justify-between">
+      {showForm && user?.role === 'admin' && (
+        <div className="mb-8 rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-slate-800">Crear nuevo proyecto</h2>
+          <form onSubmit={handleCreateProject} className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Nombre del proyecto</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej: Sistema de ventas"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition focus:border-red-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-100"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Descripción</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe brevemente el proyecto…"
+                rows={3}
+                className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm transition focus:border-red-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-100"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={creating}
+              className="rounded-xl bg-gradient-to-r from-red-600 to-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-200 transition hover:from-red-700 hover:to-orange-600 disabled:opacity-60"
+            >
+              {creating ? 'Creando…' : 'Crear proyecto'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      <div className="mb-4">
         <h2 className="text-lg font-semibold text-slate-800">
           Todos los proyectos
-          <span className="ml-2 text-sm font-normal text-slate-500">({projects.length})</span>
+          <span className="ml-2 text-sm font-normal text-slate-400">({projects.length})</span>
         </h2>
       </div>
 
       {projects.length === 0 ? (
-        <div className="bg-white border border-dashed border-slate-300 rounded-xl p-12 text-center">
-          <p className="text-slate-500">No hay proyectos todavía.</p>
-          <p className="text-sm text-slate-400 mt-1">Crea el primero usando el formulario de arriba.</p>
+        <div className="rounded-2xl border border-dashed border-orange-200 bg-white/80 p-14 text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-2xl">
+            📁
+          </div>
+          <p className="font-medium text-slate-600">No hay proyectos todavía</p>
+          <p className="mt-1 text-sm text-slate-400">Crea el primero usando el botón de arriba</p>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           {projects.map((project) => (
             <Link
               key={project.id}
               to={`/projects/${project.id}`}
-              className="block bg-white border border-slate-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all"
+              className="group block rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:border-orange-300 hover:shadow-md hover:shadow-orange-100"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-800 hover:text-blue-600">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-semibold text-slate-800 transition group-hover:text-red-700">
                     {project.name}
                   </h3>
-                  <p className="text-slate-500 mt-1 text-sm line-clamp-2">
+                  <p className="mt-1 line-clamp-2 text-sm text-slate-500">
                     {project.description || 'Sin descripción'}
                   </p>
                 </div>
                 <span
-                  className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
                     project.status === 'active'
-                      ? 'bg-green-100 text-green-700'
+                      ? 'bg-emerald-100 text-emerald-700'
                       : project.status === 'completed'
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-orange-100 text-orange-700'
                       : 'bg-slate-100 text-slate-600'
                   }`}
                 >
                   {project.status}
                 </span>
               </div>
-              <div className="mt-3 text-xs text-slate-400">
+              <div className="mt-4 text-xs text-slate-400">
                 Creado el {new Date(project.created_at).toLocaleDateString('es-PE')}
               </div>
             </Link>
