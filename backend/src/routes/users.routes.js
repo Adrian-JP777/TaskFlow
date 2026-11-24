@@ -7,7 +7,7 @@ const {
   getAllUsers,
 } = require('../controllers/users.controller');
 
-router.get('/', authenticate, requireRole('admin'), getAllUsers);
+router.get('/', authenticate, getAllUsers);
 router.get('/:id', authenticate, getUserProfile);
 router.put('/:id', authenticate, updateUserProfile);
 
