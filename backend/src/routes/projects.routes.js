@@ -9,6 +9,9 @@ const {
   deleteProject,
 } = require('../controllers/projects.controller');
 
+const { getDashboard } = require('../controllers/issues.controller');
+router.get('/meta/dashboard', authenticate, getDashboard);
+
 router.get('/', getAllProjects);
 router.get('/:id', getProjectById);
 router.post('/', authenticate, requireRole('admin'), createProject);
